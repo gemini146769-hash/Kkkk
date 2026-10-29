@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Селфи камера</title>
+    <!-- Подключаем официальный скрипт Telegram Web App -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        video, canvas {
+            display: none; /* Скрываем видеопоток, если хотим сделать снимок скрытно после нажатия */
+            max-width: 100%;
+            border-radius: 10px;
+        }
+        #photo {
+            margin-top: 20px;
+            max-width: 100%;
+            border-radius: 10px;
+        }
+        button {
+            background-color: #2481cc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Сделать селфи</h2>
+    <p>Нажмите кнопку ниже, чтобы разрешить доступ к фронтальной камере:</p>
+
+    <button id="snapButton">Сделать снимок</button>
+
+    <!-- Элементы для работы камеры -->
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+    <br>
+    <img id="photo" alt="Ваше селфи появится здесь">
+
+    <script>
+        // Инициализация Telegram Web App
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const button = document.getElementById('snapButton');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const photo = document.getElementById('photo');
+
+        button.addEventListener('click', async () => {
+            try {
+                // Запрос фронтальной камеры (селфи)
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'user' }, 
+                    audio: false 
+                });
+                
+                video.srcObject = stream;
+                await video.play();
+
+                // Даем камере секунду на фокусировку и делаем кадр
+                setTimeout(() => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const context = canvas.getContext('2d');
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    // Получаем картинку в формате Base64
+                    const dataUrl = canvas.toDataURL('image/png');
+                    photo.src = dataUrl;
+
+                // Останавливаем поток камеры после снимка
+                stream.getTracks().forEach(track => track.stop());
+                button.style.display = 'none'; // Скрываем кнопку
+                }, 1000);
+
+            } catch (err) {
+                alert('Ошибка доступа к камере: ' + err.message);
+            }
+        });
+    </script>
+
+</body>
+</html>
